@@ -49,18 +49,40 @@ def benchmark_jser_file(jser_path):
     
     # Time the loading operation
     print(f"File: {os.path.basename(jser_path)} ({file_size:.2f} MB)")
-    print("Loading... ", end="", flush=True)
     
     start = time.perf_counter()
     series = Series.openJser(jser_path)
     
-    # Count sections to ensure data loaded
-    num_sections = len([s for s in series.sections if s is not None])
+    # Count sections to make sure the data is loaded
+    num_sections = len(series.sections)
     elapsed = time.perf_counter() - start
     
-    print(f"{elapsed:.3f}s")
+    print(f"Total time: {elapsed:.3f}s")
     print(f"Sections: {num_sections}")
-    print(f"Time: {elapsed:.3f}s")
+    
+    # Time the page sections loading
+    section_load_start = time.perf_counter()
+    section_load_total = 0
+    for snum in series.sections.keys(): 
+        if snum is not None:
+            section = series.loadSection(snum)
+            section_load_total += 1
+    section_load_elapsed = time.perf_counter() - section_load_start
+    
+    print(f"Page Sections time: {section_load_elapsed:.3f}s")
+    
+    # Time accessing all objects
+    object_access_start = time.perf_counter()
+    obj_names = series.objects.getNames()
+    for obj_name in obj_names:
+        obj = series.objects[obj_name]
+        # Access some information to make sure the object data is loaded
+        _ = obj.name
+        _ = obj.count
+        _ = obj.volume
+    object_access_elapsed = time.perf_counter() - object_access_start
+    
+    print(f"Go to specific object time: {object_access_elapsed:.3f}s")
     
     series.close()
 
